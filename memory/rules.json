@@ -1,0 +1,15 @@
+{
+  "rules": [],
+  "state": {
+    "seen_ports": [
+      6463,
+      32933,
+      33633,
+      44935,
+      45295
+    ],
+    "streaks": {},
+    "fired": [],
+    "baseline_done": true
+  }
+}

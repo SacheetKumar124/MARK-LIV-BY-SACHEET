@@ -1,0 +1,169 @@
+{
+  "_readme": [
+    "Settings for the screen_ai plugin: screenshot understanding, auto-reply and error fixing.",
+    "Everything that sends a message you did not type yourself is off until you turn it on.",
+    "The fast path: fill in 'contacts', then arm with mode 'draft' to review drafts, or",
+    "mode 'send' for unattended replies. Nothing is ever sent to a contact whose entry is",
+    "missing or has auto_reply false.",
+    "After editing this file the plugin picks the changes up on the next look — no restart."
+  ],
+  "capture": {
+    "_note": "reuse_seconds avoids taking three screenshots of a screen that has not moved.",
+    "reuse_seconds": 2,
+    "keep_frames": 12,
+    "note_max_pixels": 1400
+  },
+  "vision": {
+    "_note": [
+      "Models are tried in the order below, but the client re-orders them by what has",
+      "actually been working: a model that has answered quickly before goes first, a model",
+      "that returned 404 is remembered as retired and skipped for good, one that returned 503",
+      "cools off for 90s, and a model that has never been tried still gets its turn in this",
+      "configured order.",
+      "Measured on this machine, four INTERLEAVED trials per model with these settings:",
+      "gemini-3.6-flash answered every time (2.40s median on short text, 4.31s median on",
+      "a real screenshot); gemini-3.1-flash-lite managed 1 of 4 text calls and averaged",
+      "9.11s on images. A single sample had suggested the opposite — alternating trials",
+      "settled it. gemini-3.8-flash, gemini-3.7-flash, gemini-3.5-flash and",
+      "gemini-flash-latest all returned 503, and",
+      "gemini-3.5-flash-lite / gemini-flash-lite-latest answered but took 32s and 55s.",
+      "2.5-generation names return 404. So the fastest verified models come first, the",
+      "newest (best quality, often throttled) follow, and the measured-slow ones sit at",
+      "the back. `max_seconds_per_call` caps the whole walk, so a burst of slow failures",
+      "can never turn one look into a two-minute wait."
+    ],
+    "models": [
+      "gemini-3.6-flash",
+      "gemini-3.1-flash-lite",
+      "gemini-3.8-flash",
+      "gemini-3.7-flash",
+      "gemini-3.5-flash",
+      "gemini-3-flash-preview",
+      "gemini-3.5-flash-lite",
+      "gemini-flash-lite-latest",
+      "gemini-flash-latest"
+    ],
+    "max_seconds_per_call": 40,
+    "timeout_seconds": 45,
+    "slow_seconds": 12.0,
+    "thinking_budget": 0,
+    "max_calls_per_minute": 20,
+    "max_calls_per_hour": 400
+  },
+  "privacy": {
+    "_note": [
+      "Enforced in code before an image is sent, not requested in a prompt.",
+      "blocked_apps is matched case-insensitively against the app name, window title and",
+      "the first few strings of visible text. redact_regions paints rectangles black on the",
+      "frame itself, so those pixels never leave the machine."
+    ],
+    "block_sensitive_apps": true,
+    "blocked_apps": [
+      "keepass",
+      "keepassxc",
+      "bitwarden",
+      "1password",
+      "lastpass",
+      "enpass",
+      "seahorse",
+      "gnome-keyring",
+      "password",
+      "keychain",
+      "bank",
+      "banking",
+      "paypal",
+      "binance",
+      "coinbase",
+      "wise",
+      "stripe",
+      "private browsing",
+      "incognito",
+      "inprivate",
+      "authenticator",
+      "2fa",
+      "otp"
+    ],
+    "redact_regions": [],
+    "_redact_example": {
+      "left": 0,
+      "top": 0,
+      "width": 400,
+      "height": 120
+    }
+  },
+  "reply": {
+    "_note": [
+      "auto_send false = drafts are written and queued for your approval, never sent.",
+      "arm(confirm=true, mode='send') turns unattended sending on for the session.",
+      "block_risky_drafts stops anything that promises, agrees to plans, states a time, or",
+      "touches money or credentials — those are held for you regardless of mode."
+    ],
+    "auto_send": false,
+    "min_confidence": 0.55,
+    "cooldown_seconds": 45,
+    "max_per_contact_per_hour": 4,
+    "max_per_hour": 12,
+    "max_replies_per_thread": 6,
+    "allow_unknown_contacts": false,
+    "block_risky_drafts": true,
+    "quiet_hours": {
+      "enabled": true,
+      "start": "23:00",
+      "end": "07:30"
+    }
+  },
+  "watch": {
+    "_note": [
+      "The background loop only runs while armed. It is idempotent: arming twice does",
+      "nothing extra. A frame identical to the previous one is skipped without a model call,",
+      "which is what keeps a long-running watch cheap."
+    ],
+    "interval_seconds": 45,
+    "min_interval_seconds": 30,
+    "only_when_messaging_app": true,
+    "respond_while_away_only": false,
+    "idle_seconds_for_away": 120,
+    "notify_on_reply": true,
+    "notify_on_draft": true,
+    "max_ticks_without_activity": 0,
+    "resume_after_restart": false,
+    "max_captures_per_hour": 24,
+    "pause_while_user_talking_seconds": 20,
+    "_safety_note": [
+      "resume_after_restart: false — a watch armed once used to come back on every launch and",
+      "photograph the screen in the background. It must now be armed deliberately, in the",
+      "running app, with a confirmation.",
+      "max_captures_per_hour: 24 — hard ceiling; the watch stops itself and says so.",
+      "pause_while_user_talking_seconds: 20 — a watch tick never steals the look the user's own",
+      "request is using, and never fires while they are mid-sentence."
+    ]
+  },
+  "contacts": [
+    {
+      "_note": [
+        "Auto-reply is OFF for this entry until you set \"auto_reply\": true.",
+        "This name was read from your own screen while the plugin was built; delete it if",
+        "you would rather start from an empty list.",
+        "aliases catch the same person under another spelling. tone/notes are passed to the",
+        "drafting prompt as extra guidance for this person only."
+      ],
+      "name": "Mimi",
+      "aliases": [],
+      "auto_reply": false,
+      "tone": "",
+      "language": "",
+      "notes": ""
+    },
+    {
+      "_note": "Template for another friend: copy, rename, set auto_reply true.",
+      "name": "Example Friend",
+      "aliases": [
+        "example"
+      ],
+      "auto_reply": false,
+      "tone": "casual",
+      "language": "",
+      "notes": ""
+    }
+  ]
+}

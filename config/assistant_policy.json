@@ -1,0 +1,83 @@
+{
+  "version": "1.0.0",
+  "generated_for": "MARK LIII assistant brain (core/brain.py, core/attention.py)",
+  "purpose": "Govern what Jarvis may notice, decide, and interrupt with on its own. Everything here is a deliberate, auditable choice: the difference between an assistant that feels intelligent and one that feels like a spam bot is this file.",
+
+  "attention": {
+    "enabled": true,
+    "tick_seconds": 45,
+    "min_interrupt_score": 0.62,
+    "weights": {
+      "urgency": 0.42,
+      "relevance": 0.30,
+      "novelty": 0.18,
+      "confidence": 0.10
+    },
+    "budget": {
+      "interrupts_per_hour": 4,
+      "interrupts_per_day": 24,
+      "min_gap_seconds": 180
+    },
+    "quiet_hours": {
+      "enabled": true,
+      "start": "23:00",
+      "end": "07:30",
+      "allow_urgent": true,
+      "urgent_floor": 0.90
+    },
+    "digest": {
+      "max_items": 40,
+      "ttl_hours": 48
+    },
+    "novelty_ttl_hours": 6,
+    "rescore_after_seconds": 900
+  },
+
+  "senses": {
+    "telemetry": true,
+    "presence": true,
+    "listeners": true,
+    "screen": false,
+    "camera": false,
+    "telemetry_interval_seconds": 60,
+    "presence_idle_threshold_minutes": 20,
+    "note": "screen and camera are off by default: continuous capture costs battery and privacy. Presence is inferred from session idle time instead, which is free."
+  },
+
+  "trust": {
+    "never_automatic": [
+      "unlock_device",
+      "spend_money",
+      "send_message_as_user",
+      "delete_files",
+      "install_software",
+      "modify_credentials",
+      "disable_protection"
+    ],
+    "confirm_required": [
+      "autolock_now",
+      "sos_alert",
+      "identity_scan",
+      "enable_personal_watch",
+      "external_network_scan"
+    ],
+    "audit_everything": true,
+    "memory_local_only": true,
+    "note": "confirm_required routes through core/confirm.py so the user presses a button. never_automatic is a hard refusal for autonomous action, not a prompt-level suggestion."
+  },
+
+  "phone": {
+    "enabled": true,
+    "handoff_ttl_hours": 72,
+    "outbox_max": 200,
+    "speak_attention_on_phone": true
+  },
+
+  "safety_boundaries": {
+    "identity_watch_scope": "Only identifiers the user has entered in config/personal_watch.json may be looked up. Jarvis must refuse to run identity checks against another person.",
+    "physical_limits": "Jarvis has no ability to act in the physical world beyond this machine's screen, speakers, keyboard and network. It must never imply otherwise.",
+    "privacy": "Speech, observations and digests stay in memory/*.jsonl on this machine. Nothing leaves the machine except calls the user explicitly asks for."
+  },
+
+  "schema_note": "Read by core/attention.py and core/brain.py. Invalid or missing values fall back to the built-in defaults, so a broken file degrades instead of crashing."
+}

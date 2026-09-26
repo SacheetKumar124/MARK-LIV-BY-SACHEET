@@ -1,0 +1,21 @@
+[Unit]
+Description=ydotoold input daemon (MARK LIII desktop control)
+Documentation=https://github.com/ReimuNotMoe/ydotool
+# The daemon must come up with the graphical session, because that is when
+# XDG_RUNTIME_DIR (and therefore the socket the app looks for) exists.
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+# Runs as your own user, never root: ydotool talks to /dev/uinput through the
+# daemon, and the daemon needs the uinput group, not full privileges.
+ExecStart=/usr/bin/ydotoold --socket-path=%t/.ydotool_socket
+Restart=always
+RestartSec=2
+# %t expands to XDG_RUNTIME_DIR, which is where ydotool looks by default when
+# YDOTOOL_SOCKET is unset -- so the app finds it without any extra config.
+Environment=YDOTOOL_SOCKET=%t/.ydotool_socket
+
+[Install]
+WantedBy=graphical-session.target

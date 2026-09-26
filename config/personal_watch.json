@@ -1,0 +1,28 @@
+{
+  "_how_to_use": [
+    "1. Put YOUR OWN email addresses in identifiers.emails and the handles you use in identifiers.usernames.",
+    "2. Set enabled to true (or ask Jarvis: 'enable personal watch').",
+    "3. Ask for a check: 'is my account exposed' or run personal_watch action=check_identity.",
+    "Jarvis refuses to look up anything that is not in this file, so a request about someone else cannot work however it is phrased."
+  ],
+  "_privacy": "This file stays on this machine. Identity tools make requests to public sites about the values below; nothing is sent anywhere else.",
+
+  "enabled": false,
+
+  "identifiers": {
+    "emails": [],
+    "usernames": []
+  },
+
+  "device": {
+    "min_free_gb": 8.0,
+    "min_battery_pct": 20.0,
+    "check_firewall": true
+  },
+
+  "safety": {
+    "autolock_idle_minutes": 25,
+    "sos_contacts": [],
+    "alarm": false
+  }
+}

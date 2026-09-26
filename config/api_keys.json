@@ -1,0 +1,14 @@
+{
+    "gemini_api_key": "PUT-YOUR-GEMINI-API-KEY-HERE",
+    "os_system": "linux",
+    "morning_brief_enabled": false,
+    "hud_style": "face",
+    "push_to_talk_enabled": false,
+    "camera_index": 0,
+    "wake_word_enabled": false,
+    "voice_name": "Charon",
+    "assistant_name": "J.A.R.V.I.S",
+    "user_name": "",
+    "ui_color": "#00d4ff",
+    "proactive_audio": false
+}

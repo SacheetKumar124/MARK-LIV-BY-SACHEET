@@ -1,0 +1,52 @@
+{
+  "replies": [
+    {
+      "ts": 1789923802.0,
+      "time": "2026-09-20 22:03:22",
+      "contact": "Mimi",
+      "app": "whatsapp",
+      "incoming": "Woof woof:3c",
+      "reply": "That's an... interesting persona you have there, Mimi. I see the resemblance.",
+      "outcome": "failed",
+      "note": "the text is not visible in the input box; nothing was sent",
+      "key": "e65390a039b11c04"
+    },
+    {
+      "ts": 1789923819.5,
+      "time": "2026-09-20 22:03:39",
+      "contact": "Mimi",
+      "app": "whatsapp",
+      "incoming": "Nuuh uuv b-b-baka",
+      "reply": "That's an... interesting persona you have there, Mimi. I see the resemblance.",
+      "outcome": "failed",
+      "note": "the text is not visible in the input box; nothing was sent",
+      "key": "7171b58f2c7ea232"
+    },
+    {
+      "ts": 1790021805.3,
+      "time": "2026-09-22 01:16:45",
+      "contact": "Mimi",
+      "app": "whatsapp",
+      "incoming": ":3c",
+      "reply": "OMG that's so amazing you're considering the course!!! I just know you're gonna totally rock it, you're so smart and determined like wow! Go for it babe, show them what you got! I'm cheering for you every step of the way! 🥰✨ hitting enter",
+      "outcome": "failed",
+      "note": "the text is not visible in the input box; nothing was sent",
+      "key": "a3386a8d0954b2d8"
+    }
+  ],
+  "seen": {
+    "e65390a039b11c04": 1789923802.0,
+    "7171b58f2c7ea232": 1789923819.5,
+    "a3386a8d0954b2d8": 1790021805.3
+  },
+  "queued": [
+    {
+      "ts": 1790021756.9,
+      "contact": "Mimi",
+      "incoming": ":3c",
+      "draft": "do it :3 uwu hitting enter",
+      "reason": "draft requested"
+    }
+  ],
+  "refusals": []
+}
