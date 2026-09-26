@@ -199,8 +199,8 @@ Every autonomous action is appended to `memory/activity_log.jsonl` with a **why*
 ## ⚡ Quick Start
 
 ```bash
-git clone https://github.com/SacheetKumar124/MARK-LIII-BY-SACHEET.git
-cd MARK-LIII-BY-SACHEET/Mark-LIV
+git clone https://github.com/SacheetKumar124/MARK-LIV-BY-SACHEET.git
+cd MARK-LIV-BY-SACHEET
 pip install -r requirements.txt --break-system-packages
 python main.py
 ```
