@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05070d">
+<meta name="mobile-web-app-capable" content="yes">
+<title>JARVIS — Phone</title>
+<style>
+  :root { --bg:#05070d; --card:#0d121c; --line:#1e2736; --txt:#e8eef7; --dim:#8b9bb4;
+          --accent:#39c5ff; --warn:#ffb454; --bad:#ff6b6b; --good:#4ade80; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; background:var(--bg); color:var(--txt);
+         font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+         padding:14px 14px 90px; }
+  h1 { font-size:17px; letter-spacing:.16em; margin:2px 0 12px; color:var(--accent); font-weight:600; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 13px; margin-bottom:11px; }
+  .card h2 { font-size:11px; letter-spacing:.14em; color:var(--dim); margin:0 0 8px; font-weight:600; text-transform:uppercase; }
+  .row { display:flex; gap:8px; align-items:center; }
+  .muted { color:var(--dim); font-size:13px; }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--good); display:inline-block; margin-right:6px; }
+  button { background:#16202f; color:var(--txt); border:1px solid var(--line); border-radius:11px;
+           padding:11px 13px; font-size:14px; font-weight:600; }
+  button:active { background:#1e2b3e; }
+  button.primary { background:linear-gradient(180deg,#1e7fa8,#155f80); border-color:#2a8fbb; }
+  button.mic { flex:1; font-size:16px; padding:16px; }
+  input { flex:1; background:#0a0f18; border:1px solid var(--line); color:var(--txt);
+          border-radius:11px; padding:11px 12px; font-size:15px; min-width:0; }
+  .item { border-top:1px solid var(--line); padding:9px 0; }
+  .item:first-of-type { border-top:none; }
+  .item .t { font-weight:600; }
+  .pill { font-size:10px; text-transform:uppercase; letter-spacing:.1em; padding:2px 7px;
+          border-radius:99px; border:1px solid var(--line); color:var(--dim); margin-left:6px; }
+  .pill.urgent { color:var(--bad); border-color:#5a2020; }
+  .pill.info { color:var(--accent); border-color:#1d3a4a; }
+  .bar { position:fixed; left:0; right:0; bottom:0; padding:11px 14px calc(11px + env(safe-area-inset-bottom));
+         background:rgba(5,7,13,.95); border-top:1px solid var(--line); display:flex; gap:8px; }
+  #log { max-height:210px; overflow:auto; font-size:13px; }
+  #log div { padding:4px 0; border-bottom:1px solid #141b26; }
+  .banner { background:#2a1d1d; border-color:#5a2020; color:#ffd7d7; font-size:13px; }
+</style>
+</head>
+<body>
+<h1>J A R V I S &nbsp;/&nbsp; PHONE</h1>
+
+<div class="card" id="authCard" style="display:none">
+  <h2>Connect</h2>
+  <p class="muted">Paste the token from your dashboard sign-in. It is stored only on this phone.</p>
+  <div class="row"><input id="token" placeholder="dashboard token"><button onclick="saveToken()">Save</button></div>
+</div>
+
+<div class="card banner" id="errCard" style="display:none"></div>
+
+<div class="card">
+  <h2>Status</h2>
+  <div id="state" class="muted">connecting…</div>
+</div>
+
+<div class="card">
+  <h2>Waiting for you</h2>
+  <div id="handoffs" class="muted">nothing queued</div>
+</div>
+
+<div class="card">
+  <h2>Noticed, not interrupting</h2>
+  <div id="digest" class="muted">nothing yet</div>
+</div>
+
+<div class="card">
+  <h2>Recent activity</h2>
+  <div id="log">—</div>
+</div>
+
+<div class="bar">
+  <button class="primary mic" id="micBtn" onclick="startMic()">🎙 Hold a thought</button>
+  <button onclick="sendText()">Send</button>
+</div>
+
+<script>
+const LS = "jarvis_phone_token";
+let recognition = null, listening = false, seenSpeech = new Set(), spoken = new Set();
+
+function token() {
+  return localStorage.getItem(LS) || localStorage.getItem("jarvis_token") || "";
+}
+function saveToken() {
+  const v = document.getElementById("token").value.trim();
+  if (v) { localStorage.setItem(LS, v); document.getElementById("authCard").style.display = "none"; refresh(); }
+}
+function headers() { return { "Content-Type": "application/json", "Authorization": "Bearer " + token() }; }
+function showError(msg) {
+  const card = document.getElementById("errCard");
+  card.style.display = msg ? "block" : "none";
+  card.textContent = msg || "";
+}
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c])); }
+
+async function api(path, options) {
+  if (!token()) { document.getElementById("authCard").style.display = "block"; return null; }
+  try {
+    const res = await fetch(path, Object.assign({ headers: headers() }, options || {}));
+    if (res.status === 401) { showError("Token rejected — sign in on the dashboard again and paste a fresh token."); return null; }
+    showError("");
+    return await res.json();
+  } catch (e) { showError("Cannot reach the laptop: " + e.message); return null; }
+}
+
+async function refresh() {
+  const s = await api("/assistant/state");
+  if (s) {
+    const b = (s.brain || {}), a = b.attention || {}, budget = a.budget || {}, ph = s.phone || {};
+    const dig = a.digest_queued || 0, hand = ph.pending_handoffs || 0;
+    document.getElementById("state").innerHTML =
+      `<span class="dot"></span>attention ${a.enabled === false ? "off" : "on"} · ` +
+      `${hand} handoff(s) · ${dig} queued<br>` +
+      `<span class="muted">budget ${budget.hour_used || 0}/${budget.hour_limit || "?"} this hour · ` +
+      `${(s.readings || {}).idle_seconds != null ? Math.round((s.readings.idle_seconds)/60) + " min idle" : "idle unknown"} · ` +
+      `ports ${((s.readings || {}).listeners || []).length}</span>`;
+  }
+  const p = await api("/assistant/phone/pull?limit=15");
+  if (p) renderHandoffs(p.items || []);
+  const d = await api("/assistant/digest?limit=12");
+  if (d) renderDigest(d.digest || []);
+  const act = await api("/assistant/activity?limit=18");
+  if (act) renderLog(act.entries || []);
+}
+
+function renderHandoffs(items) { speakNew(items); show("handoffs", items, "Nothing queued — you are caught up."); }
+function renderDigest(items) { speakNew(items); show("digest", items, "Nothing noticed in the background."); }
+
+function show(id, items, empty) {
+  const box = document.getElementById(id);
+  if (!items || !items.length) { box.innerHTML = `<span class="muted">${empty}</span>`; return; }
+  box.innerHTML = items.map(it => {
+    const when = esc(it.time || "");
+    const title = esc(it.title || it.text || "");
+    const detail = esc(it.detail || "");
+    const urgent = it.urgent ? '<span class="pill urgent">urgent</span>'
+                             : '<span class="pill info">' + esc(it.source || it.channel || "") + '</span>';
+    const ack = it.id ? `<button style="padding:6px 10px;font-size:12px" onclick="ack('${esc(it.id)}')">Done</button>` : "";
+    return `<div class="item"><div class="t">${title}${urgent}</div>` +
+           (detail ? `<div class="muted">${detail}</div>` : "") +
+           `<div class="row" style="justify-content:space-between;margin-top:6px">
+              <span class="muted">${when}</span>${ack}</div></div>`;
+  }).join("");
+}
+
+function speakNew(items) {
+  if (!window.speechSynthesis) return;
+  items.filter(it => it.urgent || it.source === "listeners").forEach(it => {
+    const key = String(it.id || it.fingerprint || it.title || "");
+    if (!key || spoken.has(key)) return;
+    spoken.add(key);
+    const u = new SpeechSynthesisUtterance(String(it.title || it.text || ""));
+    u.rate = 1.02;
+    speechSynthesis.speak(u);
+  });
+}
+
+function renderLog(entries) {
+  const box = document.getElementById("log");
+  if (!entries.length) { box.innerHTML = '<span class="muted">no activity yet</span>'; return; }
+  box.innerHTML = entries.map(e => {
+    const line = esc(e.action || e.category) + (e.detail ? " — " + esc(e.detail) : "");
+    return `<div><span class="muted">${esc(e.time || "")} ${esc(e.category || "")}</span><br>${line}</div>`;
+  }).join("");
+  if (window.speechSynthesis) {
+    entries.filter(e => e.category === "interrupt").forEach(e => {
+      const key = (e.ts || "") + (e.action || "");
+      if (seenSpeech.has(key)) return;
+      seenSpeech.add(key);
+      const u = new SpeechSynthesisUtterance(String(e.detail || e.action || ""));
+      speechSynthesis.speak(u);
+    });
+  }
+}
+
+async function ack(id) {
+  await api("/assistant/complete", { method: "POST", body: JSON.stringify({ id: id }) });
+  refresh();
+}
+
+async function send(text) {
+  if (!text) return;
+  await api("/assistant/phone/note", { method: "POST", body: JSON.stringify({ text: text }) });
+  await api("/api/command", { method: "POST", body: JSON.stringify({ text: text }) });
+  const box = document.getElementById("log");
+  box.insertAdjacentHTML("afterbegin", `<div><span class="muted">you just now</span><br>${esc(text)}</div>`);
+}
+
+function sendText() {
+  const box = document.getElementById("quickText");
+  const text = box ? box.value.trim() : "";
+  if (text) { send(text); box.value = ""; }
+}
+
+function startMic() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const btn = document.getElementById("micBtn");
+  if (!SR) { btn.textContent = "🎙 Tap then type below"; promptForText(); return; }
+  if (listening) { recognition && recognition.stop(); return; }
+  recognition = new SR();
+  recognition.lang = navigator.language || "en-US";
+  recognition.interimResults = true;
+  recognition.onstart = () => { listening = true; btn.textContent = "● listening — tap to send"; };
+  recognition.onresult = (event) => {
+    let final = "", interim = "";
+    for (const res of event.results) { (res.isFinal ? (final += res[0].transcript) : (interim += res[0].transcript)); }
+    btn.textContent = final ? "● sending…" : "● " + interim.slice(0, 40);
+    if (final) { send(final.trim()); recognition.stop(); }
+  };
+  recognition.onerror = (e) => { listening = false; btn.textContent = "🎙 Hold a thought"; showError("Mic error: " + e.error); };
+  recognition.onend = () => { listening = false; if (btn.textContent.startsWith("●")) btn.textContent = "🎙 Hold a thought"; };
+  recognition.start();
+}
+
+function promptForText() {
+  const text = window.prompt("Type your request for Jarvis:");
+  if (text) send(text.trim());
+}
+
+document.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.id === "quickText") sendText(); });
+if (!token()) document.getElementById("authCard").style.display = "block";
+refresh();
+setInterval(refresh, 15000);
+</script>
+<input id="quickText" placeholder="or type here and press Send" style="position:fixed;left:14px;right:120px;bottom:78px">
+</body>
+</html>
